@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from . import forms
 from django.urls import reverse_lazy, reverse
+from django.db.models import Q, F
 
 # Create your views here.
 
@@ -37,6 +38,22 @@ class BlogCreate(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, C
 
     def get_success_url(self):
         return reverse_lazy('blog-list')
+
+class BlogSearchView(generic.ListView):
+    template_name = 'blog/blog_search.html'
+
+    def get_queryset(self):
+        object_list = Blog.objects.all()
+        query = self.request.GET.get('q')
+        if query:
+            object_list = object_list.filter(Q(title__icontains=query) |
+                                          Q(body__icontains=query) |
+                                          Q(description__icontains=query),
+                                          is_active=True)
+        blog_type = self.request.GET.get('type')
+        if blog_type:
+            object_list = object_list.filter(Q(blog_type__name__icontains=blog_type))
+        return object_list
 
 
 
